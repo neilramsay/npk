@@ -1,4 +1,5 @@
 #! /bin/bash
+
 cd /root/
 
 echo {{APIGATEWAY}} > /root/apigateway
@@ -6,8 +7,9 @@ echo {{APIGATEWAY}} > /root/apigateway
 export APIGATEWAY=$(cat /root/apigateway)
 export USERDATA=${userdata}
 export USERDATAREGION=${userdataRegion}
-export INSTANCEID=`wget -qO- http://169.254.169.254/latest/meta-data/instance-id`
-export REGION=`wget -qO- http://169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/.$//'`
+export TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+export INSTANCEID=`wget "--header=X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/instance-id`
+export REGION=`wget "--header=X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/.$//'`
 aws ec2 describe-tags --region $REGION --filter "Name=resource-id,Values=$INSTANCEID" --output=text | sed -r 's/TAGS\t(.*)\t.*\t.*\t(.*)/\1="\2"/' | sed -r 's/aws:ec2spot:fleet-request-id/SpotFleet/' > ec2-tags
 
 . ec2-tags
@@ -32,12 +34,14 @@ mkdir /potfiles
 
 # format & mount /dev/xvdb
 if [[ -e /dev/xvdb ]]; then
+	echo "Using base device /dev/xvdb"
 	mkfs.ext4 /dev/xvdb
 	mkdir /xvdb
 	mount /dev/xvdb /xvdb/
 	mkdir /xvdb/npk-wordlist
 	ln -s /xvdb/npk-wordlist /root/npk-wordlist
 else
+	echo "Using base device /dev/nvme1n1"
 	mkfs.ext4 /dev/nvme1n1
 	mkdir /nvme1n1
 	mount /dev/nvme1n1 /nvme1n1/
@@ -100,9 +104,10 @@ ln -s /var/log/cloud-init-output.log /potfiles/$${INSTANCEID}-output.log
 echo <<EOF > /root/monitor_instance_action.sh
 #! /bin/bash
 
-ACTIONS=\$(curl -s --head http://169.254.169.254/latest/meta-data/spot/intance_action | grep 404 | wc -l)
+TOKEN=\`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\`
+ACTIONS=\$(curl -s --head -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/spot/intance_action | grep 404 | wc -l)
 if [[ \$ACTIONS -ne 1 ]]; then
-	wget -O /potfiles/$${INSTANCEID}-instance_action.json http://169.254.169.254/latest/meta-data/spot/intance_action
+	wget "--header=X-aws-ec2-metadata-token: $TOKEN" -O /potfiles/$${INSTANCEID}-instance_action.json http://169.254.169.254/latest/meta-data/spot/intance_action
 	aws --region $USERDATAREGION s3 sync /potfiles/ s3://$USERDATA/$ManifestPath/potfiles/ --include \"*$${INSTANCEID}*\"
 fi
 EOF
