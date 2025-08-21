@@ -1,12 +1,13 @@
 {
   "name": "execute_campaign",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "NPK execute_campaign Lambda",
   "main": "main.js",
   "dependencies": {
-    "aws-sdk": "^2.599.0"
+    "@aws-sdk/client-cognito-identity-provider": "^3.872.0",
+    "@aws-sdk/client-dynamodb": "^3.872.0",
+    "@aws-sdk/client-ec2": "^3.872.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

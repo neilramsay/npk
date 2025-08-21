@@ -1,13 +1,15 @@
 const accountDetails = require('./accountDetails.json');
 
-const aws = require('aws-sdk');
-const ddb = new aws.DynamoDB({ region: accountDetails.primaryRegion });
-const s3 = new aws.S3({ region: accountDetails.primaryRegion });
+const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {EC2} = require('@aws-sdk/client-ec2')
+const {CognitoIdentityProvider} = require('@aws-sdk/client-cognito-identity-provider')
+
+const ddb = new DynamoDB({ region: accountDetails.primaryRegion });
 
 let cb = "";
 let variables = {};
 
-var cognito = new aws.CognitoIdentityServiceProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
+var cognito = new CognitoIdentityProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
 
 exports.main = async function(event, context, callback) {
 
@@ -104,7 +106,7 @@ exports.main = async function(event, context, callback) {
 			TableName: "Campaigns"
 		}).promise();
 
-		campaign = aws.DynamoDB.Converter.unmarshall(campaign.Items[0]);
+		campaign = DynamoDB.Converter.unmarshall(campaign.Items[0]);
 
 	} catch (e) {
 		console.log("Failed to retrieve campaign details.", e);
@@ -117,7 +119,7 @@ exports.main = async function(event, context, callback) {
 
 	console.log(`[+] Campaign ${campaignId} is associated with SFR ${campaign.spotFleetRequestId}`);
 
-	var ec2 = new aws.EC2({region: campaign.region});
+	var ec2 = new EC2({region: campaign.region});
 
 	switch (campaign.status) {
 		case "STARTING":
@@ -225,7 +227,7 @@ exports.main = async function(event, context, callback) {
 
 				// Delete event entries for the campaign.
 				const promises = entries.Items.map((entry) => {
-					entry = aws.DynamoDB.Converter.unmarshall(entry);
+					entry = DynamoDB.Converter.unmarshall(entry);
 
 					return ddb.deleteItem({
 						Key: {

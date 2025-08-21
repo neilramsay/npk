@@ -1,7 +1,9 @@
 'use strict';
 
 const fs = require('fs');
-const aws = require('aws-sdk');
+const {DynamoDB} = require("@aws-sdk/client-dynamodb")
+const {S3} = require("@aws-sdk/client-s3")
+const {CognitoIdentityProvider} = require("@aws-sdk/client-cognito-identity-provider")
 const uuid = require('uuid/v4');
 
 const accountDetails = JSON.parse(fs.readFileSync('./accountDetails.json', 'ascii'));
@@ -13,10 +15,10 @@ const vcpus = Object.keys(accountDetails.families).reduce((acc, curr) => {
 	return acc;
 }, {});
 
-const ddb = new aws.DynamoDB({ region: accountDetails.primaryRegion });
-const s3 = new aws.S3({ region: accountDetails.primaryRegion });
+const ddb = new DynamoDB({ region: accountDetails.primaryRegion });
+const s3 = new S3({ region: accountDetails.primaryRegion });
 
-const cognito = new aws.CognitoIdentityServiceProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
+const cognito = new CognitoIdentityProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
 
 let cb = "";
 let origin = "";
@@ -292,7 +294,7 @@ exports.main = async function(event, context, callback) {
 				return respond(400, {}, `Rule-based campaign missing required elements [${missingElements.join(', ')}]`);
 			}
 
-			const s3dict = new aws.S3({ region: variables.dictionaryBucketRegion });
+			const s3dict = new S3({ region: variables.dictionaryBucketRegion });
 
 			// Verify dictionary
 			promises.push(new Promise((success, failure) => {
@@ -443,7 +445,7 @@ exports.main = async function(event, context, callback) {
 	}
 
 	try {
-		const updateParams = aws.DynamoDB.Converter.marshall({
+		const updateParams = DynamoDB.Converter.marshall({
 			instanceType: verifiedManifest.instanceType,
 			status: "AVAILABLE",
 			active: false,

@@ -1,7 +1,9 @@
 'use strict';
 
 const fs = require('fs');
-const aws = require('aws-sdk');
+const {S3} = require('@aws-sdk/client-s3');
+const {EC2} = require('@aws-sdk/client-ec2');
+const {ServiceQuotas} = require('@aws-sdk/client-service-quotas');
 const zlib = require('zlib');
 const util = require('util');
 const stream = require('stream');
@@ -32,7 +34,7 @@ exports.main = async function(event, context, callback) {
 		return callback('[!] Invalid event received.');
 	}
 
-	const s3 = new aws.S3({ region: event.awsRegion });
+	const s3 = new S3({ region: event.awsRegion });
 	const bucket = event.s3.bucket.name;
 	const keysize = event.s3.object.size;
 	const key = event.s3.object.key;
@@ -85,8 +87,8 @@ exports.main = async function(event, context, callback) {
 
 	// Use EC2 for compression if the size is over 4GB:
 	if (keysize > 4 * Math.pow(1024, 3)) {
-		const sq = new aws.ServiceQuotas({ region: event.awsRegion });
-		const ec2 = new aws.EC2({ region: event.awsRegion });
+		const sq = new ServiceQuotas({ region: event.awsRegion });
+		const ec2 = new EC2({ region: event.awsRegion });
 
 		let instanceType = "i3en.2xlarge";
 		const i3Quota = await sq.getServiceQuota({

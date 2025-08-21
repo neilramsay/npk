@@ -1,7 +1,9 @@
 'use strict';
 
 const fs = require('fs');
-const aws = require('aws-sdk');
+const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {EC2} = require('@aws-sdk/client-ec2')
+const {CognitoIdentityProvider} = require('@aws-sdk/client-cognito-identity-provider')
 
 const accountDetails = JSON.parse(fs.readFileSync('./accountDetails.json', 'ascii'));
 const archs = Object.keys(accountDetails.families).reduce((acc, curr) => {
@@ -28,14 +30,14 @@ const owners = Object.keys(accountDetails.families).reduce((acc, curr) => {
 	return acc;
 }, {});
 
-const ddb = new aws.DynamoDB({ region: accountDetails.primaryRegion });
-const s3 = new aws.S3({ region: accountDetails.primaryRegion });
+const ddb = new DynamoDB({ region: accountDetails.primaryRegion });
+const s3 = new S3({ region: accountDetails.primaryRegion });
 
 let cb = "";
 let origin = "";
 let variables = {};
 
-const cognito = new aws.CognitoIdentityServiceProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
+const cognito = new CognitoIdentityProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
 
 exports.main = async function(event, context, callback) {
 
@@ -58,7 +60,7 @@ exports.main = async function(event, context, callback) {
 
 			variables.availabilityZones[region] = {};
 
-			const ec2 = new aws.EC2({region: region});
+			const ec2 = new EC2({region: region});
 
 			promises.push(ec2.describeSubnets({
 				Filters: [{
@@ -209,7 +211,7 @@ exports.main = async function(event, context, callback) {
 	// Campaign is valid. Get AZ pricing and Image AMI
 	// * Again in parallel, to save, like, some more milliseconds.
 
-	const ec2 = new aws.EC2({region: manifest.region});
+	const ec2 = new EC2({region: manifest.region});
 	let pricing, image;
 
 	const imageFilters = [{
@@ -412,7 +414,7 @@ exports.main = async function(event, context, callback) {
 	console.log(`Successfully requested spot fleet ${spotFleetRequest.SpotFleetRequestId}`);
 
 	try {
-		const updateParams = aws.DynamoDB.Converter.marshall({
+		const updateParams = DynamoDB.Converter.marshall({
 			active: true,
 			status: "STARTING",
 			spotFleetRequestId: spotFleetRequest.SpotFleetRequestId,

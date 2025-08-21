@@ -4,7 +4,8 @@
 "use strict";
 
 var fs 			= require('fs');
-var aws			= require('aws-sdk');
+var {DynamoDB}  = require('@aws-sdk/client-dynamodb')
+
 var uuid		= require('uuid/v4');
 var ddbTypes 	= require('dynamodb-data-types').AttributeValue;
 var settings = JSON.parse(JSON.stringify(process.env));
@@ -12,13 +13,7 @@ var settings = JSON.parse(JSON.stringify(process.env));
 var cb = "";
 var lambdaEvent = {};
 
-aws.config.apiVersions = {
-	dynamodb: 	'2012-08-10'
-};
-
-aws.config.update({region: settings.region});
-
-var db = new aws.DynamoDB();
+var db = new DynamoDB();
 
 Object.prototype.require = function (elements) {
 	var self = this;

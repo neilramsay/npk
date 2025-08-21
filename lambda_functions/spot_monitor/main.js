@@ -1,19 +1,16 @@
 "use strict";
 
 const fs = require('fs');
-const aws 	= require('aws-sdk');
+const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {EC2} = require('@aws-sdk/client-ec2')
+const {SNS} = require('@aws-sdk/client-sns')
+
 const settings = JSON.parse(JSON.stringify(process.env));
 settings.regions = JSON.parse(settings.regions);
 
 const accountDetails = JSON.parse(fs.readFileSync('./accountDetails.json', 'ascii'));
 
-aws.config.apiVersions = {
-	dynamodb: 	'2012-08-10'
-};
-
-aws.config.update({region: settings.region});
-
-const db = new aws.DynamoDB();
+const db = new DynamoDB();
 
 exports.main = async function(event, context, callback) {
 
@@ -24,7 +21,7 @@ exports.main = async function(event, context, callback) {
 	try {
 
 		for (const region of Object.keys(settings.regions)) {
-			const ec2 = new aws.EC2({region: region});
+			const ec2 = new EC2({region: region});
 
 			promises.push(ec2.describeSpotFleetRequests({}).promise().then(async (data) => {
 
@@ -66,7 +63,7 @@ exports.main = async function(event, context, callback) {
 	// Enumerate spot instances from all regions, and associate them with their SFRs.
 	try {
 		Object.keys(settings.regions).forEach(function(region) {
-			const ec2 = new aws.EC2({region: region});
+			const ec2 = new EC2({region: region});
 
 			promises.push(ec2.describeSpotInstanceRequests({}).promise().then((data) => {
 				data.SpotInstanceRequests.forEach(function(request) {
@@ -133,7 +130,7 @@ exports.main = async function(event, context, callback) {
 			}
 
 			if (!!instanceCount && !hasOpenInstances && !/cancelled/.test(fleet.SpotFleetRequestState)) {
-				const ec2 = new aws.EC2({region: fleet.region});
+				const ec2 = new EC2({region: fleet.region});
 
 				promises.push(ec2.cancelSpotFleetRequests({
 					TerminateInstances: true,
@@ -242,7 +239,7 @@ exports.main = async function(event, context, callback) {
 
 				spotPrices[spotKey] = {};
 
-				const ec2 = new aws.EC2({region: fleet.region});
+				const ec2 = new EC2({region: fleet.region});
 				promises.push(ec2.describeSpotPriceHistory({
 					InstanceTypes: [event.instanceType],
 					ProductDescriptions: ["Linux/UNIX (Amazon VPC)"],
@@ -353,7 +350,7 @@ exports.main = async function(event, context, callback) {
 				});
 			});
 
-			const ec2 = new aws.EC2({region: fleet.region});
+			const ec2 = new EC2({region: fleet.region});
 			const fleetState = (/cancelled/.test(fleet.SpotFleetRequestState)) ? "STOPPING" : "RUNNING";
 
 			promises.push(editCampaignViaRequestId(fleetId, {
@@ -411,7 +408,7 @@ exports.main = async function(event, context, callback) {
 
 function criticalAlert(message) {
 	return new Promise((success, failure) => {
-		var sns = new aws.SNS({apiVersion: '2010-03-31', region: 'us-west-2'});
+		var sns = new SNS({apiVersion: '2010-03-31', region: 'us-west-2'});
 
 		sns.publish({
 			Message: "NPK CriticalAlert: " + message,
@@ -431,7 +428,7 @@ function criticalAlert(message) {
 
 function editCampaign(entity, campaign, values) {
 	return new Promise((success, failure) => {
-		values = aws.DynamoDB.Converter.marshall(values);
+		values = DynamoDB.Converter.marshall(values);
 
 		Object.keys(values).forEach(function(e) {
 			values[e] = {
@@ -479,7 +476,7 @@ function editCampaignViaRequestId(spotFleetRequestId, values) {
 				return success(null);
 			}
 
-			data = aws.DynamoDB.Converter.unmarshall(data.Items[0]);
+			data = DynamoDB.Converter.unmarshall(data.Items[0]);
 			console.log("[+] Found campaign " + data.keyid.split(':').slice(1));
 
 			editCampaign(data.userid, data.keyid.split(':').slice(1), values).then((updates) => {

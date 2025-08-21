@@ -1,6 +1,6 @@
 {
   "name": "spot_interrupt_catcher",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "NPK listener for spot interrupt events",
   "main": "main.js",
   "scripts": {
@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1013.0"
+    "@aws-sdk/client-dynamodb": "^3.872.0",
+    "@aws-sdk/client-ec2": "^3.872.0"
   }
 }

@@ -1,6 +1,8 @@
 'use strict';
 
-const aws = require("aws-sdk");
+const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {EC2} = require('@aws-sdk/client-ec2')
+
 const settings = JSON.parse(JSON.stringify(process.env));
 
 exports.main = async function (event, context, callback) {
@@ -22,7 +24,7 @@ exports.main = async function (event, context, callback) {
 
 		console.log(`[+] Caught interruption event for instance ${instanceId}`);
 
-		const ec2 = new aws.EC2({ region: event.region });
+		const ec2 = new EC2({ region: event.region });
 
 		// Get details for the instance to be terminated:
 		instance = await ec2.describeInstances({
@@ -57,7 +59,7 @@ exports.main = async function (event, context, callback) {
 		[user, campaignId] = instance.Tags.ManifestPath.split('/campaigns/');
 
 		// Update that campaign details
-		const ddb = new aws.DynamoDB({ region: settings.region });
+		const ddb = new DynamoDB({ region: settings.region });
 
 		await ddb.updateItem({
 			Key: {
