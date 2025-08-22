@@ -467,8 +467,8 @@ exports.main = async function(event, context, callback) {
 
 		const updateCampaigns = await ddbDocClient.update({
 			Key: {
-				userid: {S: entity},
-				keyid: {S: `campaigns:${campaignId}`}
+				userid: entity,
+				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
 			Item: updateParams
