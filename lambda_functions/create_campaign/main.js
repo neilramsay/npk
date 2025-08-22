@@ -471,7 +471,7 @@ exports.main = async function(event, context, callback) {
 				keyid: {S: `campaigns:${campaignId}`}
 			},
 			TableName: "Campaigns",
-			AttributeUpdates: updateParams
+			Item: updateParams
 		});
 	} catch (e) {
 		console.log("Failed to update campaign record.", e);
