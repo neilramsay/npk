@@ -21,7 +21,7 @@ function uploadStream(Bucket, Key, s3) {
 
 	return {
 		writeStream: passthrough,
-		s3Promise: s3.upload({ Bucket, Key, Body: passthrough }).promise()
+		s3Promise: s3.upload({ Bucket, Key, Body: passthrough })
 	}
 }
 
@@ -68,7 +68,7 @@ exports.main = async function(event, context, callback) {
 		await s3.deleteObject({
 			Bucket: bucket,
 			Key: key
-		}).promise();
+		});
 
 		return callback(`[!] '${type}' is not a valid type.`);
 	}
@@ -78,7 +78,7 @@ exports.main = async function(event, context, callback) {
 		const exists = await s3.headObject({
 			Bucket: bucket,
 			Key: newKey
-		}).promise();
+		});
 
 		newKey = `${type}/${basename}-${Date.now()}.gz`
 	} catch (e) {
@@ -94,7 +94,7 @@ exports.main = async function(event, context, callback) {
 		const i3Quota = await sq.getServiceQuota({
 			ServiceCode: 'ec2',
 			QuotaCode: 'L-34B43A08'
-		}).promise()
+		})
 
 		// console.log(i3Quota.Quota);
 
@@ -137,7 +137,7 @@ exports.main = async function(event, context, callback) {
 		    	Name: "name",
 		    	Values: ["amzn2-ami-hvm-2.0.20*"]
 		    }]
-		}).promise()
+		})
 
 		const image = images.Images.reduce((newest, entry) => 
 			entry.CreationDate > newest.CreationDate ? entry : newest
@@ -195,7 +195,7 @@ exports.main = async function(event, context, callback) {
 			}
 		};
 
-		const sfr = await ec2.requestSpotFleet(spotFleetParams).promise();
+		const sfr = await ec2.requestSpotFleet(spotFleetParams);
 
 		console.log(`[+] Successfully requested Spot fleet [ ${sfr.SpotFleetRequestId} ]`);
 
@@ -235,7 +235,7 @@ exports.main = async function(event, context, callback) {
 			await s3.deleteObject({
 				Bucket: bucket,
 				Key: key
-			}).promise();
+			});
 			
 			return callback(e);
 		});
@@ -255,7 +255,7 @@ exports.main = async function(event, context, callback) {
 				size: size.toString()
 			},
 			MetadataDirective: 'REPLACE'
-		}).promise();
+		});
 
 	} else {
 
@@ -266,7 +266,7 @@ exports.main = async function(event, context, callback) {
 			await s3.deleteObject({
 				Bucket: bucket,
 				Key: key
-			}).promise();
+			});
 
 			return callback(e);
 		});
@@ -288,13 +288,13 @@ exports.main = async function(event, context, callback) {
 				size: size.toString()
 			},
 			MetadataDirective: 'REPLACE'
-		}).promise();
+		});
 
 		if (size == 0 || lines == 0) {
 			await s3.deleteObject({
 				Bucket: bucket,
 				Key: newKey
-			}).promise();
+			});
 
 			return callback(`[!] File has no linebreaks or a length of 0. Removing it.`);
 		}
@@ -303,7 +303,7 @@ exports.main = async function(event, context, callback) {
 	await s3.deleteObject({
 		Bucket: bucket,
 		Key: key
-	}).promise();
+	});
 
 	const used = process.memoryUsage().heapUsed / 1024 / 1024;
 	console.log(`The script uses approximately ${Math.round(used * 100) / 100} MB`);

@@ -23,7 +23,7 @@ exports.main = async function(event, context, callback) {
 		for (const region of Object.keys(settings.regions)) {
 			const ec2 = new EC2({region: region});
 
-			promises.push(ec2.describeSpotFleetRequests({}).promise().then(async (data) => {
+			promises.push(ec2.describeSpotFleetRequests({}).then(async (data) => {
 
 				for (let config of data.SpotFleetRequestConfigs) {
 					// Skip fleets more than a day old, since some history items can expire before the fleet does.
@@ -65,7 +65,7 @@ exports.main = async function(event, context, callback) {
 		Object.keys(settings.regions).forEach(function(region) {
 			const ec2 = new EC2({region: region});
 
-			promises.push(ec2.describeSpotInstanceRequests({}).promise().then((data) => {
+			promises.push(ec2.describeSpotInstanceRequests({}).then((data) => {
 				data.SpotInstanceRequests.forEach(function(request) {
 					request.Tags = request.Tags.reduce((tags, tag) => {
 						tags[tag.Key] = tag.Value;
@@ -135,7 +135,7 @@ exports.main = async function(event, context, callback) {
 				promises.push(ec2.cancelSpotFleetRequests({
 					TerminateInstances: true,
 					SpotFleetRequestIds: [fleetId]
-				}).promise().then((data) => {
+				}).then((data) => {
 					console.log(`[+] Cancelled ${fleetId} due to all instance requests being closed.`);
 				}, (e) => {
 					console.log(`[-] Unable to cancel ${fleetId} due to all instance requests being closed.`, e);
@@ -246,7 +246,7 @@ exports.main = async function(event, context, callback) {
 
 					// Default to retrieving the last two days' spot prices.
 					StartTime: (new Date().getTime() / 1000) - (60 * 60 * 48)
-				}).promise().then((data) => {
+				}).then((data) => {
 
 					data.SpotPriceHistory.forEach(function(spotHistoryItem) {
 						const az = spotHistoryItem.AvailabilityZone;
@@ -371,7 +371,7 @@ exports.main = async function(event, context, callback) {
 				promises.push(ec2.cancelSpotFleetRequests({
 					TerminateInstances: true,
 					SpotFleetRequestIds: [fleetId]
-				}).promise().then((data) => {
+				}).then((data) => {
 					console.log(`Successfully terminated ${fleetId}`);
 					return Promise.resolve();
 				}, (e) => {
@@ -387,7 +387,7 @@ exports.main = async function(event, context, callback) {
 				promises.push(ec2.cancelSpotFleetRequests({
 					TerminateInstances: true,
 					SpotFleetRequestIds: [fleetId]
-				}).promise().then((data) => {
+				}).then((data) => {
 					console.log(`Successfully terminated ${fleetId}`);
 					return Promise.resolve();
 				}, (e) => {
@@ -493,7 +493,7 @@ function getSpotRequestHistory(ec2, sfr, nextToken = null) {
 		SpotFleetRequestId: sfr,
 		StartTime: "1970-01-01T00:00:00Z",
 		NextToken: nextToken
-	}).promise().then((data) => {
+	}).then((data) => {
 		
 		history = history.concat(data.HistoryRecords);
 

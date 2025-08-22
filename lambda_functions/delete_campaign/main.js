@@ -60,7 +60,7 @@ exports.main = async function(event, context, callback) {
 
 	try {
 		// Get the user based on 'sub'. This is needed when the IdP isn't Cognito itself.
-		let userList = await cognito.listUsers({ UserPoolId, Filter: `sub = "${sub}"` }).promise();
+		let userList = await cognito.listUsers({ UserPoolId, Filter: `sub = "${sub}"` });
 
 		if (!userList.Users?.[0]?.Username) {
 			console.log("Unable to find Cognito user from Subscriber ID.", e);
@@ -69,7 +69,7 @@ exports.main = async function(event, context, callback) {
 
 		Username = userList.Users[0].Username;
 
-		user = await cognito.adminGetUser({ UserPoolId, Username }).promise();
+		user = await cognito.adminGetUser({ UserPoolId, Username });
 
 		// Restructure UserAttributes as an k:v
 		user.UserAttributes = user.UserAttributes.reduce((attrs, entry) => {
@@ -104,7 +104,7 @@ exports.main = async function(event, context, callback) {
 			},
 			KeyConditionExpression: 'userid = :id and keyid = :keyid',
 			TableName: "Campaigns"
-		}).promise();
+		});
 
 		campaign = DynamoDB.Converter.unmarshall(campaign.Items[0]);
 
@@ -130,7 +130,7 @@ exports.main = async function(event, context, callback) {
 			try {
 				sfr = await ec2.describeSpotFleetRequests({
 					SpotFleetRequestIds: [campaign.spotFleetRequestId]
-				}).promise();
+				});
 			} catch(e) {
 
 				let update = await ddb.updateItem({
@@ -143,7 +143,7 @@ exports.main = async function(event, context, callback) {
 						active: { Action: 'PUT', Value: { BOOL: false }},
 						status: { Action: 'PUT', Value: { S: "CANCELLED" }}
 					}
-				}).promise();
+				});
 
 				console.log("Failed to retrieve spot fleet request.", e);
 				return respond(500, {}, "Failed to retrieve spot fleet request.", false);
@@ -161,7 +161,7 @@ exports.main = async function(event, context, callback) {
 						active: { Action: 'PUT', Value: { BOOL: false }},
 						status: { Action: 'PUT', Value: { S: "CANCELLED" }}
 					}
-				}).promise();
+				});
 
 				return respond(404, "Error retrieving spot fleet data: not found.", false);
 			}
@@ -173,7 +173,7 @@ exports.main = async function(event, context, callback) {
 					cancellation = await ec2.cancelSpotFleetRequests({
 						SpotFleetRequestIds: [sfr.SpotFleetRequestConfigs[0].SpotFleetRequestId],
 						TerminateInstances: true
-					}).promise();
+					});
 				} catch(e) {
 					console.log("Failed to request cancellation of spot fleet request.", e);
 					return respond(500, {}, "Failed to request cancellation of spot fleet request.", false);
@@ -195,7 +195,7 @@ exports.main = async function(event, context, callback) {
 						active: { Action: 'PUT', Value: { BOOL: false }},
 						status: { Action: 'PUT', Value: { S: "CANCELLED" }}
 					}
-				}).promise();
+				});
 			} catch(e) {
 				console.log("Failed to deactivate campaign.", e);
 				return respond(500, {}, "Failed to deactivate campaign.", false);
@@ -217,7 +217,7 @@ exports.main = async function(event, context, callback) {
 					},
 					KeyConditionExpression: 'userid = :id and begins_with(keyid, :keyid)',
 					TableName: "Campaigns"
-				}).promise();
+				});
 			} catch (e) {
 				console.log("Failed to retrieve events for campaign.", e);
 				return respond(500, {}, "Failed to retrieve events for campaign.", false);
@@ -235,7 +235,7 @@ exports.main = async function(event, context, callback) {
 							keyid: {S: entry.keyid}
 						},
 						TableName: "Campaigns"
-					}).promise();
+					});
 				});
 
 				promises.push(ddb.updateItem({
@@ -247,7 +247,7 @@ exports.main = async function(event, context, callback) {
 					AttributeUpdates: {
 						deleted: { Action: 'PUT', Value: { BOOL: true }}
 					}
-				}).promise());
+				}));
 
 				let finished = await Promise.all(promises);
 

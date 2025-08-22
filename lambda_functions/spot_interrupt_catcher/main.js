@@ -32,7 +32,7 @@ exports.main = async function (event, context, callback) {
 				Name: "instance-id",
 				Values: [ instanceId ]
 			}]
-		}).promise();
+		});
 
 		instance = instance.Reservations[0].Instances[0];
 
@@ -73,7 +73,7 @@ exports.main = async function (event, context, callback) {
 					Value: { S: "Spot Interruption" }
 				}
 			}
-		}).promise();
+		});
 	} catch (e) {
 		console.log(`[!] Failed to mark instance as interrupted. ${e}`);
 		return callback("Failed to mark instance as interrupted");

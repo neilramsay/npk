@@ -92,7 +92,7 @@ exports.main = async function(event, context, callback) {
 
 	try {
 		// Get the user based on 'sub'. This is needed when the IdP isn't Cognito itself.
-		let userList = await cognito.listUsers({ UserPoolId, Filter: `sub = "${sub}"` }).promise();
+		let userList = await cognito.listUsers({ UserPoolId, Filter: `sub = "${sub}"` });
 
 		if (!userList.Users?.[0]?.Username) {
 			console.log("Unable to find Cognito user from Subscriber ID.", e);
@@ -101,7 +101,7 @@ exports.main = async function(event, context, callback) {
 
 		Username = userList.Users[0].Username;
 
-		user = await cognito.adminGetUser({ UserPoolId, Username }).promise();
+		user = await cognito.adminGetUser({ UserPoolId, Username });
 
 		// Restructure UserAttributes as an k:v
 		user.UserAttributes = user.UserAttributes.reduce((attrs, entry) => {
@@ -258,7 +258,7 @@ exports.main = async function(event, context, callback) {
 		await s3.headObject({
 				Bucket: variables.userdata_bucket,
 				Key: entity + '/' + campaign.hashFile
-		}).promise().then((data) => {
+		}).then((data) => {
 
 			if (data.ContentType.indexOf("text/plain") != 0) {
 				return respond(400, {}, "Content Type " + data.ContentType + " not permitted. Use text/plain.", false);
@@ -437,7 +437,7 @@ exports.main = async function(event, context, callback) {
 			Bucket: variables.userdata_bucket,
 			Key: entity + '/campaigns/' + campaignId + '/manifest.json',
 			ContentType: 'text/plain'
-		}).promise();
+		});
 
 	} catch (e) {
 		console.log("Failed to place manifest file.", e);
@@ -477,7 +477,7 @@ exports.main = async function(event, context, callback) {
 
 				return attrs;
 			}, {})
-		}).promise();
+		});
 	} catch (e) {
 		console.log("Failed to update campaign record.", e);
 		return respond(500, {}, "Failed to update campaign record.", false)

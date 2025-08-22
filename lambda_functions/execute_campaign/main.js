@@ -67,7 +67,7 @@ exports.main = async function(event, context, callback) {
 					Name: "vpc-id",
 					Values: [variables.regions[region]]
 				}]
-			}).promise().then((data) => {
+			}).then((data) => {
 				data.Subnets.forEach((subnet) => {
 					variables.availabilityZones[region][subnet.AvailabilityZone] = subnet.SubnetId;
 				});
@@ -117,7 +117,7 @@ exports.main = async function(event, context, callback) {
 
 	try {
 		// Get the user based on 'sub'. This is needed when the IdP isn't Cognito itself.
-		let userList = await cognito.listUsers({ UserPoolId, Filter: `sub = "${sub}"` }).promise();
+		let userList = await cognito.listUsers({ UserPoolId, Filter: `sub = "${sub}"` });
 
 		if (!userList.Users?.[0]?.Username) {
 			console.log("Unable to find Cognito user from Subscriber ID.", e);
@@ -126,7 +126,7 @@ exports.main = async function(event, context, callback) {
 
 		Username = userList.Users[0].Username;
 
-		const user = await cognito.adminGetUser({ UserPoolId, Username }).promise();
+		const user = await cognito.adminGetUser({ UserPoolId, Username });
 
 		// Restructure UserAttributes as an k:v
 		user.UserAttributes = user.UserAttributes.reduce((attrs, entry) => {
@@ -164,12 +164,12 @@ exports.main = async function(event, context, callback) {
 				},
 				KeyConditionExpression: 'userid = :id and keyid = :keyid',
 				TableName: "Campaigns"
-			}).promise(),
+			}),
 
 			s3.getObject({
 				Bucket: variables.userdata_bucket,
 				Key: `${entity}/campaigns/${campaignId}/manifest.json`
-			}).promise()
+			})
 		]);
 
 		manifest = JSON.parse(manifestObject.Body.toString('ascii'));
@@ -250,11 +250,11 @@ exports.main = async function(event, context, callback) {
 				ProductDescriptions: [ "Linux/UNIX (Amazon VPC)" ],
 				InstanceTypes: [ manifest.instanceType ],
 				StartTime: Math.round(Date.now() / 1000)
-			}).promise(),
+			}),
 
 			ec2.describeImages({
 				Filters: imageFilters
-			}).promise()
+			})
 		]);
 	} catch (e) {
 		console.log("Failed to retrieve price and image details.", e);
@@ -403,7 +403,7 @@ exports.main = async function(event, context, callback) {
 	let spotFleetRequest;
 
 	try {
-		spotFleetRequest = await ec2.requestSpotFleet(spotFleetParams).promise();
+		spotFleetRequest = await ec2.requestSpotFleet(spotFleetParams);
 	} catch (e) {
 		console.log("Failed to request spot fleet.", e);
 		return respond(500, {}, "Failed to request spot fleet.", false);
@@ -438,7 +438,7 @@ exports.main = async function(event, context, callback) {
 				return attrs;
 			}, {})
 			
-		}).promise();
+		});
 	} catch (e) {
 		console.log("Spot fleet submitted, but failed to mark Campaign as 'STARTING'. This is a catastrophic error.", e);
 		return respond(500, {}, "Spot fleet submitted, but failed to mark Campaign as 'STARTING'. This is a catastrophic error.", false);
