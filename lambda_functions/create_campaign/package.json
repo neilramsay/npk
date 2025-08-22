@@ -7,6 +7,7 @@
     "@aws-sdk/client-cognito-identity-provider": "^3.872.0",
     "@aws-sdk/client-dynamodb": "^3.872.0",
     "@aws-sdk/client-s3": "^3.872.0",
+    "@aws-sdk/lib-dynamodb": "^3.873.0",
     "uuid": "^3.3.2"
   },
   "scripts": {
