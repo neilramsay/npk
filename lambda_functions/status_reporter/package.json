@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.872.0",
+    "@aws-sdk/lib-dynamodb": "^3.873.0",
     "dynamodb-data-types": "^3.0.1",
     "uuid": "^3.3.2"
   }

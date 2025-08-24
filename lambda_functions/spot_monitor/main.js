@@ -1,7 +1,8 @@
 "use strict";
 
 const fs = require('fs');
-const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBClient} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBDocumentClient, QueryCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {EC2} = require('@aws-sdk/client-ec2')
 const {SNS} = require('@aws-sdk/client-sns')
 
@@ -10,7 +11,8 @@ settings.regions = JSON.parse(settings.regions);
 
 const accountDetails = JSON.parse(fs.readFileSync('./accountDetails.json', 'ascii'));
 
-const db = new DynamoDB();
+const ddbClient = new DynamoDBClient();
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 exports.main = async function(event, context, callback) {
 
@@ -427,63 +429,36 @@ function criticalAlert(message) {
 };
 
 function editCampaign(entity, campaign, values) {
-	return new Promise((success, failure) => {
-		values = DynamoDB.Converter.marshall(values);
-
-		Object.keys(values).forEach(function(e) {
-			values[e] = {
-				Action: "PUT",
-				Value: values[e]
-			};
-		});
-
-		var ddbParams = {
-			Key: {
-				userid: {S: entity},
-				keyid: {S: "campaigns:" + campaign}
+	return ddbDocClient.send(new UpdateCommand({
+		Key: {
+				userid: entity,
+				keyid: "campaigns:" + campaign
 			},
-			TableName: "Campaigns",
-			AttributeUpdates: values
-		};
-
-		// console.log(JSON.stringify(ddbParams));
-
-		db.updateItem(ddbParams, function (err, data) {
-			if (err) {
-				return failure(err);
-			}
-
-			return success(true);
-		});
-	});
+		TableName: "Campaigns",
+		Item: values
+	}));
 }
 
 function editCampaignViaRequestId(spotFleetRequestId, values) {
-	return new Promise((success, failure) => {
-		db.query({
-			ExpressionAttributeValues: {
-				':s': {S: spotFleetRequestId}
-			},
-			KeyConditionExpression: 'spotFleetRequestId = :s',
-			IndexName: "SpotFleetRequests",
-			TableName: "Campaigns"
-		}, function (err, data) {
-			if (err) {
-				return failure(cb("Error querying SpotFleetRequest table: " + err));
-			}
+	const query = ddbDocClient.send(new QueryCommand({
+		Key: {
+			spotFleetRequestId: spotFleetRequestId
+		},
+		IndexName: "SpotFleetRequests",
+		TableName: "Campaigns"
+	})).then((value) => {
+		if (value.Items.length < 1) {
+			return
+		}
+		const data = value.Items[0]
+		console.log("[+] Found campaign " + data.keyid.split(':').slice(1));
 
-			if (data.Items.length < 1) {
-				return success(null);
-			}
+		return editCampaign(data.userid, data.keyid.split(':').slice(1), values);
 
-			data = DynamoDB.Converter.unmarshall(data.Items[0]);
-			console.log("[+] Found campaign " + data.keyid.split(':').slice(1));
-
-			editCampaign(data.userid, data.keyid.split(':').slice(1), values).then((updates) => {
-				success(updates);
-			});
-		});
+	}).catch((err) => {
+		return "Error querying SpotFleetRequest table: " + err;
 	});
+	return query
 }
 
 function getSpotRequestHistory(ec2, sfr, nextToken = null) {

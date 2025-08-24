@@ -4,16 +4,17 @@
 "use strict";
 
 var fs 			= require('fs');
-var {DynamoDB}  = require('@aws-sdk/client-dynamodb')
+var {DynamoDBClient}  = require('@aws-sdk/client-dynamodb')
+const {DynamoDBDocumentClient, UpdateCommand} = require('@aws-sdk/lib-dynamodb')
 
 var uuid		= require('uuid/v4');
-var ddbTypes 	= require('dynamodb-data-types').AttributeValue;
 var settings = JSON.parse(JSON.stringify(process.env));
 
 var cb = "";
 var lambdaEvent = {};
 
-var db = new DynamoDB();
+var ddbClient = new DynamoDBClient();
+var ddbDocClient = DynamoDBDocumentClient.from(ddbClient)
 
 Object.prototype.require = function (elements) {
 	var self = this;
@@ -31,35 +32,14 @@ Object.prototype.require = function (elements) {
 };
 
 function editCampaign(entity, rangeKey, values) {
-	return new Promise((success, failure) => {
-		values = ddbTypes.wrap(values);
-
-		Object.keys(values).forEach(function(e) {
-			values[e] = {
-				Action: "PUT",
-				Value: values[e]
-			};
-		});
-
-		var ddbParams = {
+	return ddbDocClient.send(new UpdateCommand({
 			Key: {
-				userid: {S: entity},
-				keyid: {S: rangeKey}
+				userid: entity,
+				keyid: rangeKey
 			},
 			TableName: "Campaigns",
-			AttributeUpdates: values
-		};
-
-		// console.log(JSON.stringify(ddbParams));
-
-		db.updateItem(ddbParams, function (err, data) {
-			if (err) {
-				return failure(respond(500, "Error updating table: " + err, false));
-			}
-
-			return success(data);
-		});
-	});
+			Item: values
+		}));
 }
 
 function putStatusReport(user, campaign, node, stats) {

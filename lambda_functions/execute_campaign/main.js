@@ -1,9 +1,11 @@
 'use strict';
 
 const fs = require('fs');
-const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBClient} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBDocumentClient, GetCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {EC2} = require('@aws-sdk/client-ec2')
 const {CognitoIdentityProvider} = require('@aws-sdk/client-cognito-identity-provider')
+const {S3} = require("@aws-sdk/client-s3")
 
 const accountDetails = JSON.parse(fs.readFileSync('./accountDetails.json', 'ascii'));
 const archs = Object.keys(accountDetails.families).reduce((acc, curr) => {
@@ -26,11 +28,12 @@ const owners = Object.keys(accountDetails.families).reduce((acc, curr) => {
 	Object.keys(accountDetails.families[curr].instances).forEach((instance) => {
 		acc[instance] = accountDetails.families[curr].owner || false;
 	});
-
+	
 	return acc;
 }, {});
 
-const ddb = new DynamoDB({ region: accountDetails.primaryRegion });
+const ddbClient = new DynamoDBClient({ region: accountDetails.primaryRegion });
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const s3 = new S3({ region: accountDetails.primaryRegion });
 
 let cb = "";
@@ -157,14 +160,13 @@ exports.main = async function(event, context, callback) {
 
 	try {
 		[campaign, manifestObject] = await Promise.all([
-			ddb.query({
-				ExpressionAttributeValues: {
-					':id': {S: entity},
-					':keyid': {S: `campaigns:${campaignId}`}
+			ddbDocClient.send(new GetCommand({
+				Key: {
+					userid: entity,
+					keyid: `campaigns:${campaignId}`
 				},
-				KeyConditionExpression: 'userid = :id and keyid = :keyid',
 				TableName: "Campaigns"
-			}),
+			})),
 
 			s3.getObject({
 				Bucket: variables.userdata_bucket,
@@ -414,31 +416,23 @@ exports.main = async function(event, context, callback) {
 	console.log(`Successfully requested spot fleet ${spotFleetRequest.SpotFleetRequestId}`);
 
 	try {
-		const updateParams = DynamoDB.Converter.marshall({
+		const updateParams = {
 			active: true,
 			status: "STARTING",
 			spotFleetRequestId: spotFleetRequest.SpotFleetRequestId,
 			startTime: Math.floor(new Date().getTime() / 1000),
 			eventType: "CampaignStarted",
 			lastuntil: 0,
-		});
+		};
 
-		const updateCampaign = await ddb.updateItem({
+		await ddbDocClient.send(new UpdateCommand({
 			Key: {
-				userid: {S: entity},
-				keyid: {S: `campaigns:${campaignId}`}
+				userid: entity,
+				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
-			AttributeUpdates: Object.keys(updateParams).reduce((attrs, entry) => {
-				attrs[entry] = {
-					Action: "PUT",
-					Value: updateParams[entry]
-				};
-
-				return attrs;
-			}, {})
-			
-		});
+			Item: updateParams
+		}));
 	} catch (e) {
 		console.log("Spot fleet submitted, but failed to mark Campaign as 'STARTING'. This is a catastrophic error.", e);
 		return respond(500, {}, "Spot fleet submitted, but failed to mark Campaign as 'STARTING'. This is a catastrophic error.", false);

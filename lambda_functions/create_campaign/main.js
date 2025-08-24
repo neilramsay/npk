@@ -1,8 +1,8 @@
 'use strict';
 
 const fs = require('fs');
-const {DynamoDB} = require("@aws-sdk/client-dynamodb")
-const {DynamoDBDocument, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
+const {DynamoDBClient} = require("@aws-sdk/client-dynamodb")
+const {DynamoDBDocumentClient, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {S3} = require("@aws-sdk/client-s3")
 const {CognitoIdentityProvider} = require("@aws-sdk/client-cognito-identity-provider")
 const uuid = require('uuid/v4');
@@ -16,8 +16,8 @@ const vcpus = Object.keys(accountDetails.families).reduce((acc, curr) => {
 	return acc;
 }, {});
 
-const ddb = new DynamoDB({ region: accountDetails.primaryRegion });
-const ddbDocClient = DynamoDBDocument.from(ddb);
+const ddbClient = new DynamoDBClient({ region: accountDetails.primaryRegion });
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient)
 const s3 = new S3({ region: accountDetails.primaryRegion });
 
 const cognito = new CognitoIdentityProvider({region: accountDetails.primaryRegion, apiVersion: "2016-04-18"});
@@ -465,14 +465,14 @@ exports.main = async function(event, context, callback) {
 			lastuntil: Math.floor(new Date().getTime() / 1000) + 2700,
 		};
 
-		const updateCampaigns = await ddbDocClient.update({
+		await ddbDocClient.send(new UpdateCommand({
 			Key: {
 				userid: entity,
 				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
 			Item: updateParams
-		});
+		}));
 	} catch (e) {
 		console.log("Failed to update campaign record.", e);
 		return respond(500, {}, "Failed to update campaign record.", false)

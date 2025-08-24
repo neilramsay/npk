@@ -1,10 +1,12 @@
 const accountDetails = require('./accountDetails.json');
 
-const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBClient} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBDocumentClient, DeleteCommand, QueryCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {EC2} = require('@aws-sdk/client-ec2')
 const {CognitoIdentityProvider} = require('@aws-sdk/client-cognito-identity-provider')
 
-const ddb = new DynamoDB({ region: accountDetails.primaryRegion });
+const ddbClient = new DynamoDBClient({ region: accountDetails.primaryRegion });
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient)
 
 let cb = "";
 let variables = {};
@@ -97,16 +99,13 @@ exports.main = async function(event, context, callback) {
 	let campaign;
 
 	try {
-		campaign = await ddb.query({
-			ExpressionAttributeValues: {
-				':id': {S: entity},
-				':keyid': {S: `campaigns:${campaignId}`}
+		campaign = await ddbDocClient.send(new QueryCommand({
+			Key: {
+				userid: entity,
+				keyid: `campaigns:${campaignId}`
 			},
-			KeyConditionExpression: 'userid = :id and keyid = :keyid',
 			TableName: "Campaigns"
-		});
-
-		campaign = DynamoDB.Converter.unmarshall(campaign.Items[0]);
+		}));
 
 	} catch (e) {
 		console.log("Failed to retrieve campaign details.", e);
@@ -133,17 +132,17 @@ exports.main = async function(event, context, callback) {
 				});
 			} catch(e) {
 
-				let update = await ddb.updateItem({
+				await ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: {S: entity},
-						keyid: {S: `campaigns:${campaignId}`}
+						userid: entity,
+						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					AttributeUpdates: {
-						active: { Action: 'PUT', Value: { BOOL: false }},
-						status: { Action: 'PUT', Value: { S: "CANCELLED" }}
-					}
-				});
+					Item: {
+						active: false,
+						status: "CANCELLED"
+					}					
+				}));
 
 				console.log("Failed to retrieve spot fleet request.", e);
 				return respond(500, {}, "Failed to retrieve spot fleet request.", false);
@@ -151,17 +150,17 @@ exports.main = async function(event, context, callback) {
 
 			if (!sfr.SpotFleetRequestConfigs?.[0]?.SpotFleetRequestId) {
 
-				let update = await ddb.updateItem({
+				await ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: {S: entity},
-						keyid: {S: `campaigns:${campaignId}`}
+						userid: entity,
+						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					AttributeUpdates: {
-						active: { Action: 'PUT', Value: { BOOL: false }},
-						status: { Action: 'PUT', Value: { S: "CANCELLED" }}
+					Item: {
+						active: false,
+						status: "CANCELLED"
 					}
-				});
+				}));
 
 				return respond(404, "Error retrieving spot fleet data: not found.", false);
 			}
@@ -185,17 +184,17 @@ exports.main = async function(event, context, callback) {
 			}
 
 			try {
-				let update = await ddb.updateItem({
+				await ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: {S: entity},
-						keyid: {S: `campaigns:${campaignId}`}
+						userid: entity,
+						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					AttributeUpdates: {
-						active: { Action: 'PUT', Value: { BOOL: false }},
-						status: { Action: 'PUT', Value: { S: "CANCELLED" }}
+					Item: {
+						active: false,
+						status: "CANCELLED"
 					}
-				});
+				}));
 			} catch(e) {
 				console.log("Failed to deactivate campaign.", e);
 				return respond(500, {}, "Failed to deactivate campaign.", false);
@@ -210,46 +209,44 @@ exports.main = async function(event, context, callback) {
 			let entries;
 
 			try {
-				entries = await ddb.query({
+				entries = await ddbDocClient.send(new QueryCommand({
+
 					ExpressionAttributeValues: {
-						':id': {S: entity},
-						':keyid': {S: `${campaignId}:`}
+						':id': entity,
+						':keyid': `${campaignId}:`
 					},
 					KeyConditionExpression: 'userid = :id and begins_with(keyid, :keyid)',
 					TableName: "Campaigns"
-				});
+				}));
 			} catch (e) {
 				console.log("Failed to retrieve events for campaign.", e);
 				return respond(500, {}, "Failed to retrieve events for campaign.", false);
 			}
 
 			try {
-
 				// Delete event entries for the campaign.
 				const promises = entries.Items.map((entry) => {
-					entry = DynamoDB.Converter.unmarshall(entry);
-
-					return ddb.deleteItem({
+					return ddbDocClient.send(new DeleteCommand({
 						Key: {
-							userid: {S: entity},
-							keyid: {S: entry.keyid}
+							userid: entity,
+							keyid: entry.keyid
 						},
 						TableName: "Campaigns"
-					});
+					}));
 				});
 
-				promises.push(ddb.updateItem({
+				promises.push(ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: {S: entity},
-						keyid: {S: `campaigns:${campaignId}`}
+						userid: entity,
+						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					AttributeUpdates: {
-						deleted: { Action: 'PUT', Value: { BOOL: true }}
+					Item: {
+						deleted: true
 					}
-				}));
+				})));
 
-				let finished = await Promise.all(promises);
+				await Promise.all(promises);
 
 			} catch (e) {
 				console.log("Failed to delete campaign", e);

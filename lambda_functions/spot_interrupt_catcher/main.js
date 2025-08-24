@@ -1,6 +1,7 @@
 'use strict';
 
-const {DynamoDB} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBClient} = require('@aws-sdk/client-dynamodb')
+const {DynamoDBDocumentClient, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {EC2} = require('@aws-sdk/client-ec2')
 
 const settings = JSON.parse(JSON.stringify(process.env));
@@ -59,21 +60,19 @@ exports.main = async function (event, context, callback) {
 		[user, campaignId] = instance.Tags.ManifestPath.split('/campaigns/');
 
 		// Update that campaign details
-		const ddb = new DynamoDB({ region: settings.region });
+		const ddbClient = new DynamoDBClient({ region: settings.region });
+		const ddbDocClient = DynamoDBDocumentClient.from(ddbClient)
 
-		await ddb.updateItem({
+		await ddbDocClient.send(new UpdateCommand({
 			Key: {
-				userid: { S: user },
-				keyid: { S: `campaigns:${campaignId}` }
+				userid: user,
+				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
-			AttributeUpdates: {
-				interrupted: {
-					Action: "PUT",
-					Value: { S: "Spot Interruption" }
-				}
+			Item: {
+				interrupted: "Spot Interruption"
 			}
-		});
+		}));
 	} catch (e) {
 		console.log(`[!] Failed to mark instance as interrupted. ${e}`);
 		return callback("Failed to mark instance as interrupted");
