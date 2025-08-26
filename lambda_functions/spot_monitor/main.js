@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const {DynamoDBClient} = require('@aws-sdk/client-dynamodb')
-const {DynamoDBDocumentClient, QueryCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
+const {DynamoDBDocumentClient, GetCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {EC2} = require('@aws-sdk/client-ec2')
 const {SNS} = require('@aws-sdk/client-sns')
 
@@ -435,16 +435,16 @@ function editCampaign(entity, campaign, values) {
 				keyid: "campaigns:" + campaign
 			},
 		TableName: "Campaigns",
-		Item: values
+		AttributeUpdates: values,
 	}));
 }
 
 function editCampaignViaRequestId(spotFleetRequestId, values) {
-	const query = ddbDocClient.send(new QueryCommand({
+	const query = ddbDocClient.send(new GetCommand({ // ToDo?
 		Key: {
 			spotFleetRequestId: spotFleetRequestId
 		},
-		IndexName: "SpotFleetRequests",
+		// IndexName: "SpotFleetRequests",
 		TableName: "Campaigns"
 	})).then((value) => {
 		if (value.Items.length < 1) {

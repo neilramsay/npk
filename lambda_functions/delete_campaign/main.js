@@ -1,7 +1,7 @@
 const accountDetails = require('./accountDetails.json');
 
 const {DynamoDBClient} = require('@aws-sdk/client-dynamodb')
-const {DynamoDBDocumentClient, DeleteCommand, QueryCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
+const {DynamoDBDocumentClient, DeleteCommand, GetCommand, QueryCommand, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
 const {EC2} = require('@aws-sdk/client-ec2')
 const {CognitoIdentityProvider} = require('@aws-sdk/client-cognito-identity-provider')
 
@@ -99,7 +99,7 @@ exports.main = async function(event, context, callback) {
 	let campaign;
 
 	try {
-		campaign = await ddbDocClient.send(new QueryCommand({
+		campaign = await ddbDocClient.send(new GetCommand({
 			Key: {
 				userid: entity,
 				keyid: `campaigns:${campaignId}`
@@ -138,7 +138,7 @@ exports.main = async function(event, context, callback) {
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					Item: {
+					AttributeUpdates: {
 						active: false,
 						status: "CANCELLED"
 					}					
@@ -156,7 +156,7 @@ exports.main = async function(event, context, callback) {
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					Item: {
+					AttributeUpdates: {
 						active: false,
 						status: "CANCELLED"
 					}
@@ -190,7 +190,7 @@ exports.main = async function(event, context, callback) {
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					Item: {
+					AttributeUpdates: {
 						active: false,
 						status: "CANCELLED"
 					}
@@ -241,7 +241,7 @@ exports.main = async function(event, context, callback) {
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
-					Item: {
+					AttributeUpdates: {
 						deleted: true
 					}
 				})));

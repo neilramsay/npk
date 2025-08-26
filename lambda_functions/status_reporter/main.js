@@ -38,7 +38,7 @@ function editCampaign(entity, rangeKey, values) {
 				keyid: rangeKey
 			},
 			TableName: "Campaigns",
-			Item: values
+			AttributeUpdates: values
 		}));
 }
 

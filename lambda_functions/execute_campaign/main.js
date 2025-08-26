@@ -431,7 +431,7 @@ exports.main = async function(event, context, callback) {
 				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
-			Item: updateParams
+			AttributeUpdates: updateParams
 		}));
 	} catch (e) {
 		console.log("Spot fleet submitted, but failed to mark Campaign as 'STARTING'. This is a catastrophic error.", e);

@@ -69,7 +69,7 @@ exports.main = async function (event, context, callback) {
 				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
-			Item: {
+			AttributeUpdates: {
 				interrupted: "Spot Interruption"
 			}
 		}));

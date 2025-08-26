@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const {DynamoDBClient} = require("@aws-sdk/client-dynamodb")
-const {DynamoDBDocumentClient, UpdateCommand} = require("@aws-sdk/lib-dynamodb")
+const {DynamoDBDocumentClient, PutCommand} = require("@aws-sdk/lib-dynamodb")
 const {S3} = require("@aws-sdk/client-s3")
 const {CognitoIdentityProvider} = require("@aws-sdk/client-cognito-identity-provider")
 const uuid = require('uuid/v4');
@@ -447,7 +447,7 @@ exports.main = async function(event, context, callback) {
 	}
 
 	try {
-		const updateParams = {
+		const record = {
 			instanceType: verifiedManifest.instanceType,
 			status: "AVAILABLE",
 			active: false,
@@ -465,13 +465,13 @@ exports.main = async function(event, context, callback) {
 			lastuntil: Math.floor(new Date().getTime() / 1000) + 2700,
 		};
 
-		await ddbDocClient.send(new UpdateCommand({
+		await ddbDocClient.send(new PutCommand({
 			Key: {
 				userid: entity,
 				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns",
-			Item: updateParams
+			AttributeUpdates: record
 		}));
 	} catch (e) {
 		console.log("Failed to update campaign record.", e);
