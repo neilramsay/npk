@@ -529,8 +529,7 @@ local regionKeys = std.objectFields(settings.regions);
 		},{
 			sid: "ddb",
 			actions: [
-				"dynamodb:Query",
-				"dynamodb:UpdateItem"
+				"dynamodb:PutItem"
 			],
 			resources: [
 				"${aws_dynamodb_table.campaigns.arn}"
