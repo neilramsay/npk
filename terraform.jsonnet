@@ -571,6 +571,7 @@ local regionKeys = std.objectFields(settings.regions);
 			sid: "ddb",
 			actions: [
 				"dynamodb:Query",
+				"dynamodb:GetItem",
 				"dynamodb:UpdateItem",
 				"dynamodb:DeleteItem"
 			],
@@ -639,6 +640,7 @@ local regionKeys = std.objectFields(settings.regions);
 			sid: "ddb",
 			actions: [
 				"dynamodb:Query",
+				"dynamodb:GetItem",
 				"dynamodb:UpdateItem",
 				"dynamodb:DeleteItem"
 			],
