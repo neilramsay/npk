@@ -448,6 +448,8 @@ exports.main = async function(event, context, callback) {
 
 	try {
 		const record = {
+			userid: entity,
+			keyid: `campaigns:${campaignId}`,
 			instanceType: verifiedManifest.instanceType,
 			status: "AVAILABLE",
 			active: false,
@@ -466,12 +468,8 @@ exports.main = async function(event, context, callback) {
 		};
 
 		await ddbDocClient.send(new PutCommand({
-			Key: {
-				userid: entity,
-				keyid: `campaigns:${campaignId}`
-			},
 			TableName: "Campaigns",
-			AttributeUpdates: record
+			Item: record
 		}));
 	} catch (e) {
 		console.log("Failed to update campaign record.", e);
