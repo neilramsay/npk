@@ -70,7 +70,10 @@ exports.main = async function (event, context, callback) {
 			},
 			TableName: "Campaigns",
 			AttributeUpdates: {
-				interrupted: "Spot Interruption"
+				interrupted: {
+					Action: "PUT",
+					Value: "Spot Interruption"
+				}
 			}
 		}));
 	} catch (e) {

@@ -139,8 +139,14 @@ exports.main = async function(event, context, callback) {
 					},
 					TableName: "Campaigns",
 					AttributeUpdates: {
-						active: false,
-						status: "CANCELLED"
+						active: {
+							Action: "PUT",
+							Value: false
+						},
+						status: {
+							"Action": "PUT",
+							"Value": "CANCELLED"
+						}
 					}					
 				}));
 
@@ -157,8 +163,14 @@ exports.main = async function(event, context, callback) {
 					},
 					TableName: "Campaigns",
 					AttributeUpdates: {
-						active: false,
-						status: "CANCELLED"
+						active: {
+							Action: "PUT",
+							Value: false
+						},
+						status: {
+							"Action": "PUT",
+							"Value": "CANCELLED"
+						}
 					}
 				}));
 
@@ -191,8 +203,14 @@ exports.main = async function(event, context, callback) {
 					},
 					TableName: "Campaigns",
 					AttributeUpdates: {
-						active: false,
-						status: "CANCELLED"
+						active: {
+							Action: "PUT",
+							Value: false
+						},
+						status: {
+							"Action": "PUT",
+							"Value": "CANCELLED"
+						}
 					}
 				}));
 			} catch(e) {
@@ -243,7 +261,10 @@ exports.main = async function(event, context, callback) {
 					},
 					TableName: "Campaigns",
 					AttributeUpdates: {
-						deleted: true
+						deleted: {
+							Action: 'PUT',
+							Value: true
+						}
 					}
 				})));
 

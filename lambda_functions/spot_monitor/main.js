@@ -435,7 +435,12 @@ function editCampaign(entity, campaign, values) {
 				keyid: "campaigns:" + campaign
 			},
 		TableName: "Campaigns",
-		AttributeUpdates: values,
+		AttributeUpdates: values.map((item) => {
+			return {
+				Action: "PUT",
+				Value: item
+			};
+		}),
 	}));
 }
 
