@@ -23,7 +23,7 @@ exports.main = async function(event, context, callback) {
 	// Get the available envvars into a usable format.
 	variables = JSON.parse(JSON.stringify(process.env));
 
-	let entity, UserPoolId, sub;
+	let userid, UserPoolId, sub;
 
 	try {
 
@@ -43,7 +43,7 @@ exports.main = async function(event, context, callback) {
 			return respond(401, {}, "Authentication Required", false);
 		}
 
-		entity = event.requestContext.identity.cognitoIdentityId;
+		userid = event.requestContext.identity.cognitoIdentityId;
 
 		// Associate the user identity.
 		[ UserPoolId,, sub ] = event?.requestContext?.identity?.cognitoAuthenticationProvider?.split('/')[2]?.split(':');
@@ -101,7 +101,7 @@ exports.main = async function(event, context, callback) {
 	try {
 		campaign = await ddbDocClient.send(new GetCommand({
 			Key: {
-				userid: entity,
+				userid: userid,
 				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns"
@@ -109,7 +109,7 @@ exports.main = async function(event, context, callback) {
 
 	} catch (e) {
 		console.log("Failed to retrieve campaign details.", e);
-		return respond(500, {}, "Failed to retrieve campaign details.");
+		return respond(500, {}, `Failed to retrieve campaign details. ${userid}/campaigns:${campaignId}`);
 	}
 
 	if (!campaign.status) {
@@ -134,7 +134,7 @@ exports.main = async function(event, context, callback) {
 
 				await ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: entity,
+						userid: userid,
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
@@ -152,7 +152,7 @@ exports.main = async function(event, context, callback) {
 
 				await ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: entity,
+						userid: userid,
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
@@ -186,7 +186,7 @@ exports.main = async function(event, context, callback) {
 			try {
 				await ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: entity,
+						userid: userid,
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
@@ -212,7 +212,7 @@ exports.main = async function(event, context, callback) {
 				entries = await ddbDocClient.send(new QueryCommand({
 
 					ExpressionAttributeValues: {
-						':id': entity,
+						':id': userid,
 						':keyid': `${campaignId}:`
 					},
 					KeyConditionExpression: 'userid = :id and begins_with(keyid, :keyid)',
@@ -228,7 +228,7 @@ exports.main = async function(event, context, callback) {
 				const promises = entries.Items.map((entry) => {
 					return ddbDocClient.send(new DeleteCommand({
 						Key: {
-							userid: entity,
+							userid: userid,
 							keyid: entry.keyid
 						},
 						TableName: "Campaigns"
@@ -237,7 +237,7 @@ exports.main = async function(event, context, callback) {
 
 				promises.push(ddbDocClient.send(new UpdateCommand({
 					Key: {
-						userid: entity,
+						userid: userid,
 						keyid: `campaigns:${campaignId}`
 					},
 					TableName: "Campaigns",
