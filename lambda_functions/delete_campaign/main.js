@@ -226,6 +226,7 @@ exports.main = async function(event, context, callback) {
 			try {
 				// Delete event entries for the campaign.
 				const promises = entries.Items.map((entry) => {
+					console.log("Deleting campaign: %s/%s", userid, entry.keyid);
 					return ddbDocClient.send(new DeleteCommand({
 						Key: {
 							userid: userid,
