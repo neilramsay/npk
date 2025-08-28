@@ -99,13 +99,13 @@ exports.main = async function(event, context, callback) {
 	let campaign;
 
 	try {
-		campaign = await ddbDocClient.send(new GetCommand({
+		campaign = (await ddbDocClient.send(new GetCommand({
 			Key: {
 				userid: userid,
 				keyid: `campaigns:${campaignId}`
 			},
 			TableName: "Campaigns"
-		}));
+		}))).Item;
 
 	} catch (e) {
 		console.log("Failed to retrieve campaign details.", e);
