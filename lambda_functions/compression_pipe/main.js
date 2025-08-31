@@ -202,10 +202,10 @@ exports.main = async function(event, context, callback) {
 		return true;
 	}
 
-	const raw = s3.getObject({
+	const raw = (await s3.getObject({
 		Bucket: bucket,
 		Key: key
-	}).createReadStream();
+	})).Body;
 
 	let size = 0;
 	let lines = 0;

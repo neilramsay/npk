@@ -173,8 +173,7 @@ exports.main = async function(event, context, callback) {
 				Key: `${entity}/campaigns/${campaignId}/manifest.json`
 			})
 		]);
-
-		manifest = JSON.parse(manifestObject.Body.toString('ascii'));
+		manifest = JSON.parse(await manifestObject.Body.transformToString());
 	} catch (e) {
 		console.log("Failed to retrieve campaign details.", e);
 		return respond(500, {}, "Failed to retrieve campaign details.", false);
