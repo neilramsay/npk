@@ -248,10 +248,10 @@ exports.main = async function(event, context, callback) {
 	try {
 		[pricing, image] = await Promise.all([
 			ec2.describeSpotPriceHistory({
-				EndTime: Date.now(),
+				EndTime: new Date(),
 				ProductDescriptions: [ "Linux/UNIX (Amazon VPC)" ],
 				InstanceTypes: [ manifest.instanceType ],
-				StartTime: Date.now()
+				StartTime: new Date()
 			}),
 
 			ec2.describeImages({
@@ -391,8 +391,8 @@ exports.main = async function(event, context, callback) {
 				ReplaceUnhealthyInstances: false,
 				TerminateInstancesWithExpiration: true,
 				Type: "request",
-				ValidFrom: (new Date().getTime() / 1000),
-				ValidUntil: (new Date().getTime() / 1000) + (maxDuration * 3600)
+				ValidFrom: new Date(),
+				ValidUntil: (new Date(Date.now() + (maxDuration * 3600 * 1000)))
 			}
 		};
 
@@ -420,7 +420,7 @@ exports.main = async function(event, context, callback) {
 			active: true,
 			status: "STARTING",
 			spotFleetRequestId: spotFleetRequest.SpotFleetRequestId,
-			startTime: Math.floor(new Date().getTime() / 1000),
+			startTime: new Date(),
 			eventType: "CampaignStarted",
 			lastuntil: 0,
 		};

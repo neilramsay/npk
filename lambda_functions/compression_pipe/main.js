@@ -190,8 +190,8 @@ exports.main = async function(event, context, callback) {
 				ReplaceUnhealthyInstances: false,
 				TerminateInstancesWithExpiration: true,
 				Type: "request",
-				ValidFrom: (new Date().getTime() / 1000),
-				ValidUntil: (new Date().getTime() / 1000) + (4 * 3600)
+				ValidFrom: new Date(),
+				ValidUntil: new Date(new Date() + (4 * 3600 * 1000))
 			}
 		};
 

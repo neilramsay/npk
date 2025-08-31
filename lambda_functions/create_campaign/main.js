@@ -460,11 +460,11 @@ exports.main = async function(event, context, callback) {
 			price: 0,
 			targetPrice: verifiedManifest.priceTarget,
 			region: verifiedManifest.region,
-			startTime: Math.floor(new Date().getTime() / 1000),
+			startTime: new Date(),
 			spotFleetRequestId: "<none>",
 			cognitoUserEmail: email,
 			deleted: false,
-			lastuntil: Math.floor(new Date().getTime() / 1000) + 2700,
+			lastuntil: new Date(new Date() + 2700 * 1000)
 		};
 
 		await ddbDocClient.send(new PutCommand({
