@@ -179,7 +179,7 @@ exports.main = async function(event, context, callback) {
 		return respond(500, {}, "Failed to retrieve campaign details.", false);
 	}
 
-	if (campaign.Items?.[0]?.status?.S != "AVAILABLE") {
+	if (campaign.Item?.status?.S != "AVAILABLE") {
 		return respond(404, {}, "Campaign doesn't exist or is not in 'AVAILABLE' status.", false);
 	}
 
