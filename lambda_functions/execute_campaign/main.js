@@ -248,10 +248,10 @@ exports.main = async function(event, context, callback) {
 	try {
 		[pricing, image] = await Promise.all([
 			ec2.describeSpotPriceHistory({
-				EndTime: Math.round(Date.now() / 1000),
+				EndTime: Date.now(),
 				ProductDescriptions: [ "Linux/UNIX (Amazon VPC)" ],
 				InstanceTypes: [ manifest.instanceType ],
-				StartTime: Math.round(Date.now() / 1000)
+				StartTime: Date.now()
 			}),
 
 			ec2.describeImages({
