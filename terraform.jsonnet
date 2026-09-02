@@ -219,6 +219,13 @@ local regionKeys = std.objectFields(settings.regions);
 	},
 	'backend.tf.json': sonnetry.bootstrap('c6fc_npk'),
 	'cloudfront.tf.json': {
+		data: {
+			aws_cloudfront_response_headers_policy: {
+				security_headers: {
+					name: "SecurityHeadersPolicy"
+				}
+			}
+		},
 		resource: cloudfront.resource(settings),
 		output: cloudfront.output
 	},

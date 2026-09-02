@@ -37,6 +37,7 @@
 						}
 					},
 					viewer_protocol_policy: "redirect-to-https",
+					response_headers_policy_id: "${data.aws_cloudfront_response_headers_policy.security_headers.id}",
 					min_ttl: 0,
 					max_ttl: 300,
 					default_ttl: 0,
